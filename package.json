@@ -1,0 +1,46 @@
+{
+  "name": "dn-cortes",
+  "version": "1.4.0",
+  "description": "Software de plano de corte para marcenarias.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "publish": "electron-builder --publish always"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stwdanirl/dn-cortes-app.git"
+  },
+  "keywords": [],
+  "author": "D.N Cortes",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3"
+  },
+  "dependencies": {
+    "electron-store": "^8.2.0",
+    "electron-updater": "^6.1.8"
+  },
+  "build": {
+    "appId": "com.dncortes.app",
+    "productName": "DN Cortes",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "stwdanirl",
+        "repo": "dn-cortes-app"
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
+
