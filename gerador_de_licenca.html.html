@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Gerador de Chave - D.N Cortes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="w-full max-w-lg text-center p-8 bg-white rounded-xl shadow-lg">
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">Gerador de Licença</h1>
+        <p class="text-gray-600 mb-6">Clique no botão para gerar uma nova chave de licença vitalícia para o software D.N Cortes.</p>
+        
+        <div class="mb-4">
+            <input id="keyOutput" type="text" readonly class="w-full p-3 text-center bg-gray-200 text-gray-700 rounded-md border border-gray-300 font-mono" value="Sua chave aparecerá aqui...">
+        </div>
+        
+        <button id="generateBtn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-md hover:bg-blue-700 transition duration-300">
+            Gerar Nova Chave e Copiar
+        </button>
+        <p id="copyMessage" class="text-green-500 mt-4 h-5"></p>
+    </div>
+
+    <script>
+        const generateBtn = document.getElementById('generateBtn');
+        const keyOutput = document.getElementById('keyOutput');
+        const copyMessage = document.getElementById('copyMessage');
+
+        generateBtn.addEventListener('click', () => {
+            const payload = {
+                app: 'DNCORTES',
+                type: 'full'
+            };
+            
+            // Codifica o payload para Base64
+            const key = btoa(JSON.stringify(payload));
+            
+            keyOutput.value = key;
+
+            // Copia a chave para a área de transferência
+            navigator.clipboard.writeText(key).then(() => {
+                copyMessage.textContent = 'Chave copiada para a área de transferência!';
+                setTimeout(() => {
+                    copyMessage.textContent = '';
+                }, 3000);
+            }).catch(err => {
+                copyMessage.textContent = 'Erro ao copiar a chave.';
+            });
+        });
+    </script>
+</body>
+</html>
+

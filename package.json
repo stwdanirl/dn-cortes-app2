@@ -1,6 +1,6 @@
 {
-  "name": "dn-cortes",
-  "version": "1.4.0",
+  "name": "niduscut",
+  "version": "2.2.1",
   "description": "Software de plano de corte para marcenarias.",
   "main": "main.js",
   "scripts": {
@@ -10,10 +10,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/stwdanirl/dn-cortes-app.git"
+    "url": "https://github.com/stwdanirl/dn-cortes-app2.git"
   },
   "keywords": [],
-  "author": "D.N Cortes",
+  "author": "NidusCut",
   "license": "ISC",
   "devDependencies": {
     "electron": "^28.3.3",
@@ -24,13 +24,13 @@
     "electron-updater": "^6.1.8"
   },
   "build": {
-    "appId": "com.dncortes.app",
-    "productName": "DN Cortes",
+    "appId": "com.niduscut.app",
+    "productName": "NidusCut",
     "publish": [
       {
         "provider": "github",
         "owner": "stwdanirl",
-        "repo": "dn-cortes-app"
+        "repo": "dn-cortes-app2"
       }
     ],
     "win": {

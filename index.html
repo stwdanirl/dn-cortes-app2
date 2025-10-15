@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>D.N Cortes - Plano de Corte</title>
+    <title>Plano Ideal - Otimizador de Cortes</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -106,6 +106,28 @@
         .edge-W1, .edge-W2 { grid-row: 2; width: 10px;}
         .edge-W1 { grid-column: 1; }
         .edge-W2 { grid-column: 3; }
+
+        #cuttingPlanCanvas.edit-mode { cursor: default; }
+        #cuttingPlanCanvas.dragging, .unplaced-piece.dragging { cursor: grabbing; }
+
+        #unplaced-pieces-sidebar {
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            padding: 1rem;
+            overflow-y: auto;
+        }
+        .unplaced-piece {
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            background-color: white;
+            cursor: grab;
+            margin-bottom: 0.5rem;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .unplaced-piece:active { cursor: grabbing; }
     </style>
 </head>
 <body>
@@ -113,7 +135,13 @@
     <!-- TELA DE ATIVAÇÃO -->
     <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-100">
         <div class="card w-full max-w-md text-center">
-            <h1 class="text-3xl font-bold text-gray-800 mb-2">D.N Cortes</h1>
+             <div class="flex justify-center items-center gap-3 mb-2">
+                <!-- ✅ LOGO SIMPLES E FUNCIONAL -->
+                <div class="w-12 h-12 bg-gradient-to-r from-purple-600 to-blue-500 rounded-lg flex items-center justify-center">
+                    <span class="text-white font-bold text-lg">NC</span>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-800">NidusCut</h1>
+            </div>
             <p id="login-title-message" class="text-gray-600 mb-6">Seu período de teste expirou. Insira sua chave de licença para continuar.</p>
             <input type="text" id="passwordInput" placeholder="Cole a sua chave aqui" class="form-input text-center mb-4">
             <button id="loginBtn" class="app-button btn-primary">Ativar Licença</button>
@@ -125,8 +153,14 @@
         <div class="desktop-layout">
              <aside class="sidebar">
                 <div class="border-b pb-4 border-gray-200">
-                    <h1 class="text-2xl font-bold text-gray-800">D.N Cortes</h1>
-                    <p class="text-sm text-blue-600 font-semibold">@dncortes.software</p>
+                    <div class="flex items-center gap-2">
+                        <!-- ✅ LOGO SIMPLES E FUNCIONAL NA SIDEBAR -->
+                        <div class="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-500 rounded-lg flex items-center justify-center">
+                            <span class="text-white font-bold text-sm">NC</span>
+                        </div>
+                        <h1 class="text-2xl font-bold text-gray-800">NidusCut</h1>
+                    </div>
+                    <p class="text-sm text-blue-600 font-semibold mt-1">@niduscut.software</p>
                     <div id="trial-usage-display" class="mt-2 text-sm font-bold text-amber-600 no-print"></div>
                 </div>
                 <div class="space-y-4">
@@ -170,13 +204,33 @@
                             <div class="mt-4 grid grid-cols-2 gap-4">
                                 <div><label class="font-medium text-sm block mb-1">Espessura</label><select id="pieceThickness" class="form-select"><option value="18">18 mm</option><option value="15">15 mm</option><option value="6">6 mm</option><option value="25">25 mm</option></select></div>
                                 <div><label class="font-medium text-sm block mb-1">Quantidade</label><input type="number" id="pieceQty" value="1" class="form-input"></div>
-                                <div class="col-span-2"><label class="font-medium text-sm block mb-1">Designação</label><input type="text" id="pieceDesignation" placeholder="Fundo" class="form-input"></div>
+                                <div class="col-span-2 grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="font-medium text-sm block mb-1">Designação</label>
+                                        <select id="preDesignation" class="form-select">
+                                            <option value="">Selecionar...</option><option value="Base">Base</option><option value="Contra Frente">Contra Frente</option><option value="Divisoria">Divisória</option><option value="Frente de Gaveta">Frente de Gaveta</option><option value="Fundo">Fundo</option><option value="Fundo de Gaveta">Fundo de Gaveta</option><option value="Lateral">Lateral</option><option value="Lateral de Gaveta">Lateral de Gaveta</option><option value="Porta">Porta</option><option value="Posterior Gaveta">Posterior Gaveta</option><option value="Prateleira">Prateleira</option><option value="Travessa">Travessa</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="font-medium text-sm block mb-1">&nbsp;</label>
+                                        <input type="text" id="pieceDesignation" placeholder="Ou nome personalizado" class="form-input">
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="lg:col-span-2">
                             <div class="grid grid-cols-2 gap-4">
                                 <div class="col-span-2"><label class="font-medium text-sm block mb-1">Material da Peça</label><input type="text" id="pieceMaterial" placeholder="MDF Branco" class="form-input" list="materialsDatalist"><datalist id="materialsDatalist"></datalist></div>
                                 <div class="col-span-2"><label class="font-medium text-sm block mb-1">Material da Fita de Borda</label><input type="text" id="edgeBandingMaterial" placeholder="Fita Branca TX" class="form-input" list="edgeBandingDatalist"><datalist id="edgeBandingDatalist"></datalist></div>
+                                <div class="col-span-2 space-y-2">
+                                    <label class="font-medium text-sm block">Maquinagem</label>
+                                    <div class="flex items-center gap-4">
+                                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="hasRebaixo" class="h-4 w-4 rounded"> Rebaixo</label>
+                                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="hasRasgo" class="h-4 w-4 rounded"> Rasgo p/ Fundo 
+                                            <span id="rasgoInfoBtn" class="cursor-pointer text-blue-500 font-bold">(?)</span>
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="lg:col-span-1">
@@ -197,7 +251,7 @@
                     </div>
                     <div class="flex-grow overflow-y-auto pr-2">
                         <div class="hidden md:grid grid-cols-12 gap-4 font-bold text-gray-500 text-sm p-2 border-b">
-                            <div class="col-span-1">Qtd</div><div class="col-span-2">Designação</div><div class="col-span-2">Compr.</div><div class="col-span-1">Larg.</div><div class="col-span-1">Fita</div><div class="col-span-2">Material</div><div class="col-span-3 text-center">Ações</div>
+                            <div class="col-span-1">Qtd</div><div class="col-span-2">Designação</div><div class="col-span-1">Compr.</div><div class="col-span-1">Larg.</div><div class="col-span-1">Esp.</div><div class="col-span-1 text-center">Fita</div><div class="col-span-1 text-center">Maq.</div><div class="col-span-2">Material</div><div class="col-span-2 text-center">Ações</div>
                         </div>
                         <div id="pieceList" class="divide-y divide-gray-100"><p id="emptyListMsg" class="text-center text-gray-500 p-8">Nenhuma peça adicionada.</p></div>
                     </div>
@@ -209,7 +263,7 @@
                     <h1 id="plan-title" class="text-2xl font-bold text-center text-gray-700"></h1>
                     <div class="w-24"></div>
                 </div>
-                <div class="flex flex-col xl:flex-row gap-6 flex-grow">
+                <div class="flex flex-row gap-6 flex-grow">
                     <div class="flex-grow card flex flex-col">
                         <div class="w-full flex-grow bg-gray-200 rounded-lg overflow-hidden border-2 border-gray-300 mb-4"><canvas id="cuttingPlanCanvas"></canvas></div>
                         <div class="flex justify-between items-center no-print">
@@ -223,6 +277,7 @@
                             <h2 class="text-xl font-bold mb-4 text-center">Ações do Plano</h2>
                             <div class="space-y-4">
                                 <div><label for="materialSelector" class="font-medium text-sm mb-1 block">Filtrar por Material:</label><select id="materialSelector" class="form-select"></select></div>
+                                <button id="printLabelsBtn" class="app-button btn-secondary !bg-purple-600 hover:!bg-purple-700">Imprimir Etiquetas</button>
                                 <button id="downloadPdfBtn" class="app-button btn-secondary">Baixar PDF do Plano</button>
                                 <button id="downloadCsvBtn" class="app-button btn-secondary">Baixar Lista (CSV)</button>
                             </div>
@@ -234,61 +289,35 @@
     </div>
     
     <!-- Modais -->
+    <div id="rasgoInfoModal" class="modal is-hidden"><div class="modal-content text-center"><h2 class="text-2xl font-bold mb-4">Guia para Rasgo de Fundo</h2><img src="https://i.imgur.com/uYDDy5g.png" alt="Desenho técnico do rasgo de fundo de gaveta" class="mx-auto rounded-lg border"><p class="mt-4 text-sm text-gray-600">O rasgo padrão será feito a 15mm da borda inferior, com uma espessura de 6.5mm.</p><button id="closeRasgoInfoModalBtn" class="app-button btn-primary w-full mt-6">Entendi</button></div></div>
     <div id="customAlert" class="modal is-hidden"><div class="modal-content"><p id="alertMessage" class="text-lg mb-6 text-center"></p><button id="alertCloseBtn" class="app-button btn-primary w-full">OK</button></div></div>
     <div id="editModal" class="modal is-hidden"><div class="modal-content"><h2 class="text-2xl font-bold mb-6 text-center">Editar Peça</h2><div class="grid grid-cols-2 gap-4"><div class="col-span-1"><label class="font-medium text-sm block mb-1">Comprimento (veio)</label><input type="number" id="editPieceLength" class="form-input"></div><div class="col-span-1"><label class="font-medium text-sm block mb-1">Largura</label><input type="number" id="editPieceWidth" class="form-input"></div><div><label class="font-medium text-sm block mb-1">Espessura</label><select id="editPieceThickness" class="form-select"><option value="18">18 mm</option><option value="15">15 mm</option><option value="6">6 mm</option><option value="25">25 mm</option></select></div><div><label class="font-medium text-sm block mb-1">Quantidade</label><input type="number" id="editPieceQty" class="form-input"></div><div class="col-span-2"><label class="font-medium text-sm block mb-1">Designação</label><input type="text" id="editPieceDesignation" class="form-input"></div><div class="col-span-2"><label class="font-medium text-sm block mb-1">Material da Peça</label><input type="text" id="editPieceMaterial" class="form-input" list="materialsDatalist"></div><div class="col-span-2"><label class="font-medium text-sm block mb-1">Material da Fita de Borda</label><input type="text" id="editEdgeBandingMaterial" class="form-input" list="edgeBandingDatalist"></div><div class="col-span-2"><label class="font-medium text-sm block mb-2 text-center">Fita de Borda</label><div class="edge-banding-selector"><input type="checkbox" class="edge-checkbox edge-L1" id="editEdgeL1"><input type="checkbox" class="edge-checkbox edge-W1" id="editEdgeW1"><span class="edge-label">PEÇA</span><input type="checkbox" class="edge-checkbox edge-W2" id="editEdgeW2"><input type="checkbox" class="edge-checkbox edge-L2" id="editEdgeL2"></div></div></div><div class="mt-8 grid grid-cols-2 gap-4"><button id="saveEditBtn" class="app-button btn-primary">Salvar</button><button id="closeEditModalBtn" class="app-button btn-secondary">Cancelar</button></div></div></div>
     <div id="confirmClearModal" class="modal is-hidden"><div class="modal-content"><h2 class="text-2xl font-bold mb-6 text-center">Atenção</h2><p class="text-center mb-8">Tem certeza que deseja limpar toda a lista de peças?</p><div class="grid grid-cols-2 gap-4"><button id="confirmClearBtn" class="app-button btn-danger">Sim, Limpar</button><button id="cancelClearBtn" class="app-button btn-secondary">Cancelar</button></div></div></div>
     <div id="materialModal" class="modal is-hidden"><div class="modal-content"><h2 class="text-2xl font-bold mb-6 text-center">Gerenciar Materiais</h2><div class="flex gap-2 mb-4"><input type="text" id="newMaterialInput" class="form-input" placeholder="Nome do novo material"><button id="addMaterialBtn" class="app-button btn-primary !w-auto">Adicionar</button></div><div id="materialList" class="space-y-2 max-h-60 overflow-y-auto border-t pt-4"></div><div class="mt-6"><button id="closeMaterialModalBtn" class="app-button btn-secondary w-full">Fechar</button></div></div></div>
     <div id="edgeBandingModal" class="modal is-hidden"><div class="modal-content"><h2 class="text-2xl font-bold mb-6 text-center">Gerenciar Fitas de Borda</h2><div class="flex gap-2 mb-4"><input type="text" id="newEdgeBandingInput" class="form-input" placeholder="Ex: Branco TX 22mm"><button id="addEdgeBandingBtn" class="app-button btn-primary !w-auto">Adicionar</button></div><div id="edgeBandingList" class="space-y-2 max-h-60 overflow-y-auto border-t pt-4"></div><div class="mt-6"><button id="closeEdgeBandingModalBtn" class="app-button btn-secondary w-full">Fechar</button></div></div></div>
 
-
     <script>
+        // --- MODO DE COMPATIBILIDADE PARA TESTES NO NAVEGADOR ---
+        if (typeof window.electronStore === 'undefined') {
+            console.warn("MODO DE TESTE: Usando localStorage pois o electronStore não foi encontrado.");
+            window.electronStore = {
+                get: async (key) => localStorage.getItem(key),
+                set: async (key, val) => localStorage.setItem(key, val),
+                delete: async (key) => localStorage.removeItem(key)
+            };
+        }
         // --- ELEMENTOS ---
-        const loginScreen = document.getElementById('login-screen'), appContainer = document.getElementById('app-container'), passwordInput = document.getElementById('passwordInput'), loginBtn = document.getElementById('loginBtn'), loginMessage = document.getElementById('loginMessage'), trialUsageDisplay = document.getElementById('trial-usage-display'), downloadPdfBtn = document.getElementById('downloadPdfBtn'), swapDimensionsBtn = document.getElementById('swapDimensionsBtn'), inputScreen = document.getElementById('input-screen'), outputScreen = document.getElementById('output-screen'), marceneiroNameInput = document.getElementById('marceneiroName'), clienteNameInput = document.getElementById('clienteName'), sheetWidthInput = document.getElementById('sheetWidth'), sheetHeightInput = document.getElementById('sheetHeight'), kerfInput = document.getElementById('kerf'), trimInput = document.getElementById('trim'), pieceQtyInput = document.getElementById('pieceQty'), pieceMaterialInput = document.getElementById('pieceMaterial'), pieceLengthInput = document.getElementById('pieceLength'), pieceWidthInput = document.getElementById('pieceWidth'), pieceDesignationInput = document.getElementById('pieceDesignation'), pieceThicknessInput = document.getElementById('pieceThickness'), addPieceBtn = document.getElementById('addPieceBtn'), pieceListDiv = document.getElementById('pieceList'), emptyListMsg = document.getElementById('emptyListMsg'), generatePlanBtn = document.getElementById('generatePlanBtn'), downloadCsvBtn = document.getElementById('downloadCsvBtn'), canvas = document.getElementById('cuttingPlanCanvas'), ctx = canvas.getContext('2d'), utilizationP = document.getElementById('utilization'), planTitle = document.getElementById('plan-title'), prevSheetBtn = document.getElementById('prevSheetBtn'), nextSheetBtn = document.getElementById('nextSheetBtn'), backBtn = document.getElementById('backBtn'), customAlert = document.getElementById('customAlert'), alertMessage = document.getElementById('alertMessage'), alertCloseBtn = document.getElementById('alertCloseBtn'), materialSelector = document.getElementById('materialSelector'), clearListBtn = document.getElementById('clearListBtn'), saveProjectBtn = document.getElementById('saveProjectBtn'), loadProjectBtn = document.getElementById('loadProjectBtn'), fileLoader = document.getElementById('fileLoader'), editModal = document.getElementById('editModal'), editPieceLengthInput = document.getElementById('editPieceLength'), editPieceWidthInput = document.getElementById('editPieceWidth'), editPieceQtyInput = document.getElementById('editPieceQty'), editPieceDesignationInput = document.getElementById('editPieceDesignation'), editPieceMaterialInput = document.getElementById('editPieceMaterial'), editPieceThicknessInput = document.getElementById('editPieceThickness'), saveEditBtn = document.getElementById('saveEditBtn'), closeEditModalBtn = document.getElementById('closeEditModalBtn'), confirmClearModal = document.getElementById('confirmClearModal'), confirmClearBtn = document.getElementById('confirmClearBtn'), cancelClearBtn = document.getElementById('cancelClearBtn'), manageMaterialsBtn = document.getElementById('manageMaterialsBtn'), materialModal = document.getElementById('materialModal'), newMaterialInput = document.getElementById('newMaterialInput'), addMaterialBtn = document.getElementById('addMaterialBtn'), materialList = document.getElementById('materialList'), closeMaterialModalBtn = document.getElementById('closeMaterialModalBtn'), materialsDatalist = document.getElementById('materialsDatalist'), manageEdgeBandingBtn = document.getElementById('manageEdgeBandingBtn'), edgeBandingModal = document.getElementById('edgeBandingModal'), newEdgeBandingInput = document.getElementById('newEdgeBandingInput'), addEdgeBandingBtn = document.getElementById('addEdgeBandingBtn'), edgeBandingList = document.getElementById('edgeBandingList'), closeEdgeBandingModalBtn = document.getElementById('closeEdgeBandingModalBtn'), edgeBandingDatalist = document.getElementById('edgeBandingDatalist'), edgeL1 = document.getElementById('edgeL1'), edgeW1 = document.getElementById('edgeW1'), edgeL2 = document.getElementById('edgeL2'), edgeW2 = document.getElementById('edgeW2'), edgeBandingMaterialInput = document.getElementById('edgeBandingMaterial'), editEdgeBandingMaterial = document.getElementById('editEdgeBandingMaterial'), editEdgeL1 = document.getElementById('editEdgeL1'), editEdgeW1 = document.getElementById('editEdgeW1'), editEdgeL2 = document.getElementById('editEdgeL2'), editEdgeW2 = document.getElementById('editEdgeW2');
+        const loginScreen = document.getElementById('login-screen'), appContainer = document.getElementById('app-container'), passwordInput = document.getElementById('passwordInput'), loginBtn = document.getElementById('loginBtn'), loginMessage = document.getElementById('loginMessage'), trialUsageDisplay = document.getElementById('trial-usage-display'), downloadPdfBtn = document.getElementById('downloadPdfBtn'), swapDimensionsBtn = document.getElementById('swapDimensionsBtn'), inputScreen = document.getElementById('input-screen'), outputScreen = document.getElementById('output-screen'), marceneiroNameInput = document.getElementById('marceneiroName'), clienteNameInput = document.getElementById('clienteName'), sheetWidthInput = document.getElementById('sheetWidth'), sheetHeightInput = document.getElementById('sheetHeight'), kerfInput = document.getElementById('kerf'), trimInput = document.getElementById('trim'), pieceQtyInput = document.getElementById('pieceQty'), pieceMaterialInput = document.getElementById('pieceMaterial'), pieceLengthInput = document.getElementById('pieceLength'), pieceWidthInput = document.getElementById('pieceWidth'), pieceDesignationInput = document.getElementById('pieceDesignation'), pieceThicknessInput = document.getElementById('pieceThickness'), addPieceBtn = document.getElementById('addPieceBtn'), pieceListDiv = document.getElementById('pieceList'), emptyListMsg = document.getElementById('emptyListMsg'), generatePlanBtn = document.getElementById('generatePlanBtn'), downloadCsvBtn = document.getElementById('downloadCsvBtn'), canvas = document.getElementById('cuttingPlanCanvas'), ctx = canvas.getContext('2d'), utilizationP = document.getElementById('utilization'), planTitle = document.getElementById('plan-title'), prevSheetBtn = document.getElementById('prevSheetBtn'), nextSheetBtn = document.getElementById('nextSheetBtn'), backBtn = document.getElementById('backBtn'), customAlert = document.getElementById('customAlert'), alertMessage = document.getElementById('alertMessage'), alertCloseBtn = document.getElementById('alertCloseBtn'), materialSelector = document.getElementById('materialSelector'), clearListBtn = document.getElementById('clearListBtn'), saveProjectBtn = document.getElementById('saveProjectBtn'), loadProjectBtn = document.getElementById('loadProjectBtn'), fileLoader = document.getElementById('fileLoader'), editModal = document.getElementById('editModal'), editPieceLengthInput = document.getElementById('editPieceLength'), editPieceWidthInput = document.getElementById('editPieceWidth'), editPieceQtyInput = document.getElementById('editPieceQty'), editPieceDesignationInput = document.getElementById('editPieceDesignation'), editPieceMaterialInput = document.getElementById('editPieceMaterial'), editPieceThicknessInput = document.getElementById('editPieceThickness'), saveEditBtn = document.getElementById('saveEditBtn'), closeEditModalBtn = document.getElementById('closeEditModalBtn'), confirmClearModal = document.getElementById('confirmClearModal'), confirmClearBtn = document.getElementById('confirmClearBtn'), cancelClearBtn = document.getElementById('cancelClearBtn'), manageMaterialsBtn = document.getElementById('manageMaterialsBtn'), materialModal = document.getElementById('materialModal'), newMaterialInput = document.getElementById('newMaterialInput'), addMaterialBtn = document.getElementById('addMaterialBtn'), materialList = document.getElementById('materialList'), closeMaterialModalBtn = document.getElementById('closeMaterialModalBtn'), materialsDatalist = document.getElementById('materialsDatalist'), manageEdgeBandingBtn = document.getElementById('manageEdgeBandingBtn'), edgeBandingModal = document.getElementById('edgeBandingModal'), newEdgeBandingInput = document.getElementById('newEdgeBandingInput'), addEdgeBandingBtn = document.getElementById('addEdgeBandingBtn'), edgeBandingList = document.getElementById('edgeBandingList'), closeEdgeBandingModalBtn = document.getElementById('closeEdgeBandingModalBtn'), edgeBandingDatalist = document.getElementById('edgeBandingDatalist'), edgeL1 = document.getElementById('edgeL1'), edgeW1 = document.getElementById('edgeW1'), edgeL2 = document.getElementById('edgeL2'), edgeW2 = document.getElementById('edgeW2'), edgeBandingMaterialInput = document.getElementById('edgeBandingMaterial'), editEdgeBandingMaterial = document.getElementById('editEdgeBandingMaterial'), editEdgeL1 = document.getElementById('editEdgeL1'), editEdgeW1 = document.getElementById('editEdgeW1'), editEdgeL2 = document.getElementById('editEdgeL2'), editEdgeW2 = document.getElementById('editEdgeW2'), preDesignation = document.getElementById('preDesignation'), hasRebaixo = document.getElementById('hasRebaixo'), hasRasgo = document.getElementById('hasRasgo'), rasgoInfoBtn = document.getElementById('rasgoInfoBtn'), rasgoInfoModal = document.getElementById('rasgoInfoModal'), closeRasgoInfoModalBtn = document.getElementById('closeRasgoInfoModalBtn'), printLabelsBtn = document.getElementById('printLabelsBtn');
 
         let pieces = [], allMaterialPlans = [], currentSheetIndex = 0, editingPieceId = null, materials = [], edgeBandingMaterials = [];
 
-        async function checkLicense() {
-            const license = await window.electronStore.get('dncortes_license');
-            if (license === 'full') {
-                startApp('full');
-            } else {
-                startApp('trial');
-            }
-        }
-
-        async function handleLogin() {
-            const key = passwordInput.value.trim();
-            try {
-                const decoded = JSON.parse(atob(key));
-                if (decoded.app !== 'DNCORTES' || decoded.type !== 'full') throw new Error('Chave inválida');
-                await window.electronStore.set('dncortes_license', 'full');
-                await window.electronStore.delete('dncortes_trial_uses');
-                startApp('full');
-            } catch (e) {
-                loginMessage.textContent = 'Chave de licença inválida.';
-            }
-        }
-        
-        async function startApp(mode) {
-            loginScreen.style.display = 'none';
-            appContainer.style.display = 'block';
-            if (mode === 'trial') {
-                const uses = await window.electronStore.get('dncortes_trial_uses') || 0;
-                trialUsageDisplay.textContent = `Modo de Teste: ${2 - uses} usos restantes.`;
-                trialUsageDisplay.classList.remove('hidden');
-            } else {
-                trialUsageDisplay.classList.add('hidden');
-            }
-        }
-
-        function showLogin(message = "Seu período de teste expirou. Insira sua chave de licença para continuar.") {
-            document.getElementById('login-title-message').textContent = message;
-            loginScreen.style.display = 'flex';
-            appContainer.style.display = 'none';
-        }
-
+        async function checkLicense() { const license = await window.electronStore.get('dncortes_license'); if (license === 'full') startApp('full'); else startApp('trial'); }
+        async function handleLogin() { const key = passwordInput.value.trim(); try { const decoded = JSON.parse(atob(key)); if (decoded.app !== 'DNCORTES' || decoded.type !== 'full') throw new Error('Chave inválida'); await window.electronStore.set('dncortes_license', 'full'); await window.electronStore.delete('dncortes_trial_uses'); startApp('full'); } catch (e) { loginMessage.textContent = 'Chave de licença inválida.'; } }
+        async function startApp(mode) { loginScreen.style.display = 'none'; appContainer.style.display = 'block'; if (mode === 'trial') { const uses = await window.electronStore.get('dncortes_trial_uses') || 0; trialUsageDisplay.textContent = `Modo de Teste: ${2 - uses} usos restantes.`; trialUsageDisplay.classList.remove('hidden'); } else { trialUsageDisplay.classList.add('hidden'); } }
+        function showLogin(message = "Seu período de teste expirou. Insira sua chave de licença para continuar.") { document.getElementById('login-title-message').textContent = message; loginScreen.style.display = 'flex'; appContainer.style.display = 'none'; }
         loginBtn.addEventListener('click', handleLogin);
         passwordInput.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+
         function showInputScreen() { inputScreen.classList.remove('hidden'); outputScreen.classList.add('hidden'); }
         function showOutputScreen() { inputScreen.classList.add('hidden'); outputScreen.classList.remove('hidden'); }
         backBtn.addEventListener('click', showInputScreen);
@@ -299,69 +328,34 @@
         function showConfirmClearModal() { if (pieces.length === 0) return showAlert('A lista já está vazia.'); showModal(confirmClearModal); }
         function closeEditModal() { editingPieceId = null; closeModal(editModal); }
 
-        async function loadDataFromStorage(key, defaultValue = '[]') {
-            const data = await window.electronStore.get(key);
-            return data ? JSON.parse(data) : JSON.parse(defaultValue);
-        }
-        async function saveDataToStorage(key, data) {
-            await window.electronStore.set(key, JSON.stringify(data));
-        }
-
+        async function loadDataFromStorage(key, defaultValue = '[]') { const rawData = await window.electronStore.get(key); if(typeof rawData === 'string'){ try { return JSON.parse(rawData); } catch (e) { return JSON.parse(defaultValue); } } return rawData || JSON.parse(defaultValue); }
+        async function saveDataToStorage(key, data) { await window.electronStore.set(key, JSON.stringify(data)); }
+        
         async function loadMaterials() { materials = await loadDataFromStorage('dncortes_materials'); updateMaterialsUI(); }
         async function saveMaterials() { await saveDataToStorage('dncortes_materials', materials); updateMaterialsUI(); }
         function addMaterial() { const name = newMaterialInput.value.trim(); if (name && !materials.includes(name)) { materials.push(name); materials.sort(); saveMaterials(); newMaterialInput.value = ''; newMaterialInput.focus(); } }
         function removeMaterial(name) { materials = materials.filter(m => m !== name); saveMaterials(); }
-        function updateMaterialsUI() {
-            materialList.innerHTML = materials.length === 0 ? '<p class="text-center text-gray-500">Nenhum material cadastrado.</p>' : '';
-            materials.forEach(name => {
-                const item = document.createElement('div');
-                item.className = 'flex justify-between items-center p-2 bg-gray-50 rounded-md';
-                item.innerHTML = `<span>${name}</span><button class="remove-material-btn h-7 w-7 flex items-center justify-center bg-red-100 text-red-600 rounded-md hover:bg-red-200 transition">&times;</button>`;
-                item.querySelector('.remove-material-btn').onclick = () => removeMaterial(name);
-                materialList.appendChild(item);
-            });
-            materialsDatalist.innerHTML = materials.map(name => `<option value="${name}"></option>`).join('');
-        }
-        manageMaterialsBtn.addEventListener('click', () => showModal(materialModal));
-        closeMaterialModalBtn.addEventListener('click', () => closeModal(materialModal));
-        addMaterialBtn.addEventListener('click', addMaterial);
-        newMaterialInput.addEventListener('keydown', e => { if (e.key === 'Enter') addMaterial(); });
-
+        function updateMaterialsUI() { materialList.innerHTML = materials.length === 0 ? '<p class="text-center text-gray-500">Nenhum material cadastrado.</p>' : ''; materials.forEach(name => { const item = document.createElement('div'); item.className = 'flex justify-between items-center p-2 bg-gray-50 rounded-md'; item.innerHTML = `<span>${name}</span><button class="remove-material-btn h-7 w-7 flex items-center justify-center bg-red-100 text-red-600 rounded-md hover:bg-red-200 transition">&times;</button>`; item.querySelector('.remove-material-btn').onclick = () => removeMaterial(name); materialList.appendChild(item); }); materialsDatalist.innerHTML = materials.map(name => `<option value="${name}"></option>`).join(''); }
+        manageMaterialsBtn.addEventListener('click', () => showModal(materialModal)); closeMaterialModalBtn.addEventListener('click', () => closeModal(materialModal)); addMaterialBtn.addEventListener('click', addMaterial); newMaterialInput.addEventListener('keydown', e => { if (e.key === 'Enter') addMaterial(); });
         async function loadEdgeBanding() { edgeBandingMaterials = await loadDataFromStorage('dncortes_edgeBanding'); updateEdgeBandingUI(); }
         async function saveEdgeBanding() { await saveDataToStorage('dncortes_edgeBanding', edgeBandingMaterials); updateEdgeBandingUI(); }
         function addEdgeBanding() { const name = newEdgeBandingInput.value.trim(); if (name && !edgeBandingMaterials.includes(name)) { edgeBandingMaterials.push(name); edgeBandingMaterials.sort(); saveEdgeBanding(); newEdgeBandingInput.value = ''; newEdgeBandingInput.focus(); } }
         function removeEdgeBanding(name) { edgeBandingMaterials = edgeBandingMaterials.filter(m => m !== name); saveEdgeBanding(); }
-        function updateEdgeBandingUI() {
-            edgeBandingList.innerHTML = edgeBandingMaterials.length === 0 ? '<p class="text-center text-gray-500">Nenhuma fita cadastrada.</p>' : '';
-            edgeBandingMaterials.forEach(name => {
-                const item = document.createElement('div');
-                item.className = 'flex justify-between items-center p-2 bg-gray-50 rounded-md';
-                item.innerHTML = `<span>${name}</span><button class="remove-edge-btn h-7 w-7 flex items-center justify-center bg-red-100 text-red-600 rounded-md hover:bg-red-200 transition">&times;</button>`;
-                item.querySelector('.remove-edge-btn').onclick = () => removeEdgeBanding(name);
-                edgeBandingList.appendChild(item);
-            });
-            edgeBandingDatalist.innerHTML = edgeBandingMaterials.map(name => `<option value="${name}"></option>`).join('');
-        }
-        manageEdgeBandingBtn.addEventListener('click', () => showModal(edgeBandingModal));
-        closeEdgeBandingModalBtn.addEventListener('click', () => closeModal(edgeBandingModal));
-        addEdgeBandingBtn.addEventListener('click', addEdgeBanding);
-        newEdgeBandingInput.addEventListener('keydown', e => { if (e.key === 'Enter') addEdgeBanding(); });
+        function updateEdgeBandingUI() { edgeBandingList.innerHTML = edgeBandingMaterials.length === 0 ? '<p class="text-center text-gray-500">Nenhuma fita cadastrada.</p>' : ''; edgeBandingMaterials.forEach(name => { const item = document.createElement('div'); item.className = 'flex justify-between items-center p-2 bg-gray-50 rounded-md'; item.innerHTML = `<span>${name}</span><button class="remove-edge-btn h-7 w-7 flex items-center justify-center bg-red-100 text-red-600 rounded-md hover:bg-red-200 transition">&times;</button>`; item.querySelector('.remove-edge-btn').onclick = () => removeEdgeBanding(name); edgeBandingList.appendChild(item); }); edgeBandingDatalist.innerHTML = edgeBandingMaterials.map(name => `<option value="${name}"></option>`).join(''); }
+        manageEdgeBandingBtn.addEventListener('click', () => showModal(edgeBandingModal)); closeEdgeBandingModalBtn.addEventListener('click', () => closeModal(edgeBandingModal)); addEdgeBandingBtn.addEventListener('click', addEdgeBanding); newEdgeBandingInput.addEventListener('keydown', e => { if (e.key === 'Enter') addEdgeBanding(); });
 
         swapDimensionsBtn.addEventListener('click', () => { [pieceLengthInput.value, pieceWidthInput.value] = [pieceWidthInput.value, pieceLengthInput.value]; });
-        function addPiece() {
-            const length = parseInt(pieceLengthInput.value), width = parseInt(pieceWidthInput.value);
-            if (!length || !width) return showAlert('Insira o comprimento e a largura da peça.');
-            pieces.push({ id: Date.now() + Math.random(), qty: parseInt(pieceQtyInput.value) || 1, material: (pieceMaterialInput.value || 'Material').trim(), length, width, thickness: parseInt(pieceThicknessInput.value) || 18, designation: (pieceDesignationInput.value || 'Peça').trim(), edgeBanding: { l1: edgeL1.checked, w1: edgeW1.checked, l2: edgeL2.checked, w2: edgeW2.checked, material: edgeBandingMaterialInput.value.trim() } });
-            updatePieceListUI();
-            clearInputs();
-        }
-        function clearInputs() { pieceLengthInput.value = ''; pieceWidthInput.value = ''; pieceQtyInput.value = 1; pieceDesignationInput.value = ''; edgeL1.checked = false; edgeL2.checked = false; edgeW1.checked = false; edgeW2.checked = false; pieceLengthInput.focus(); }
+        preDesignation.addEventListener('change', (e) => { if (e.target.value) pieceDesignationInput.value = e.target.value; });
+        function addPiece() { const length = parseInt(pieceLengthInput.value), width = parseInt(pieceWidthInput.value); if (!length || !width) return showAlert('Insira o comprimento e a largura da peça.'); pieces.push({ id: Date.now() + Math.random(), qty: parseInt(pieceQtyInput.value) || 1, material: (pieceMaterialInput.value || 'Material').trim(), length, width, thickness: parseInt(pieceThicknessInput.value) || 18, designation: (pieceDesignationInput.value || 'Peça').trim(), edgeBanding: { l1: edgeL1.checked, w1: edgeW1.checked, l2: edgeL2.checked, w2: edgeW2.checked, material: edgeBandingMaterialInput.value.trim() }, machining: { rebaixo: hasRebaixo.checked, rasgo: hasRasgo.checked } }); updatePieceListUI(); clearInputs(); }
+        function clearInputs() { pieceLengthInput.value = ''; pieceWidthInput.value = ''; pieceQtyInput.value = 1; pieceDesignationInput.value = ''; preDesignation.value = ''; edgeL1.checked = false; edgeL2.checked = false; edgeW1.checked = false; edgeW2.checked = false; hasRebaixo.checked = false; hasRasgo.checked = false; pieceLengthInput.focus(); }
         function editPiece(id) {
             const p = pieces.find(x => x.id === id); if (!p) return;
             editingPieceId = id;
             editPieceLengthInput.value = p.length; editPieceWidthInput.value = p.width; editPieceQtyInput.value = p.qty; editPieceMaterialInput.value = p.material; editPieceDesignationInput.value = p.designation; editPieceThicknessInput.value = p.thickness;
             if (p.edgeBanding) { editEdgeL1.checked = p.edgeBanding.l1; editEdgeW1.checked = p.edgeBanding.w1; editEdgeL2.checked = p.edgeBanding.l2; editEdgeW2.checked = p.edgeBanding.w2; editEdgeBandingMaterial.value = p.edgeBanding.material; } 
             else { editEdgeL1.checked = false; editEdgeW1.checked = false; editEdgeL2.checked = false; editEdgeW2.checked = false; editEdgeBandingMaterial.value = ''; }
+            if (p.machining) { hasRebaixo.checked = p.machining.rebaixo; hasRasgo.checked = p.machining.rasgo; }
+            else { hasRebaixo.checked = false; hasRasgo.checked = false; }
             showModal(editModal);
         }
         function saveEditedPiece() {
@@ -369,6 +363,7 @@
             const p = pieces.find(x => x.id === editingPieceId); if (!p) return;
             p.length = parseInt(editPieceLengthInput.value) || 0; p.width = parseInt(editPieceWidthInput.value) || 0; p.qty = parseInt(editPieceQtyInput.value) || 1; p.material = (editPieceMaterialInput.value || 'Material').trim(); p.designation = (editPieceDesignationInput.value || 'Peça').trim(); p.thickness = parseInt(editPieceThicknessInput.value) || 18;
             p.edgeBanding = { l1: editEdgeL1.checked, w1: editEdgeW1.checked, l2: editEdgeL2.checked, w2: editEdgeW2.checked, material: editEdgeBandingMaterial.value.trim() };
+            p.machining = { rebaixo: hasRebaixo.checked, rasgo: hasRasgo.checked };
             updatePieceListUI();
             closeEditModal();
         }
@@ -379,9 +374,10 @@
             if (pieces.length > 0) {
                 pieces.forEach(p => {
                     const hasEdge = p.edgeBanding && (p.edgeBanding.l1 || p.edgeBanding.l2 || p.edgeBanding.w1 || p.edgeBanding.w2);
+                    const hasMachining = p.machining && (p.machining.rebaixo || p.machining.rasgo);
                     const item = document.createElement('div');
                     item.className = 'grid grid-cols-12 gap-2 items-center p-2 rounded-lg bg-white hover:bg-gray-50';
-                    item.innerHTML = `<div class="col-span-1 text-sm font-bold">${p.qty}x</div><div class="col-span-2 text-sm truncate">${p.designation}</div><div class="col-span-2 text-sm">${p.length}</div><div class="col-span-1 text-sm">${p.width}</div><div class="col-span-1 text-sm text-center">${hasEdge ? '<span class="text-blue-500 font-bold">Sim</span>' : 'Não'}</div><div class="col-span-2 text-sm truncate">${p.material}</div><div class="col-span-3 flex justify-center gap-1"><button title="Duplicar" class="icon-button duplicate-btn h-7 w-7 bg-green-100 text-green-700 hover:bg-green-200"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><button title="Editar" class="icon-button edit-btn h-7 w-7 bg-yellow-100 text-yellow-700 hover:bg-yellow-200"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></button><button title="Remover" class="icon-button remove-btn h-7 w-7 bg-red-100 text-red-700 hover:bg-red-200"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>`;
+                    item.innerHTML = `<div class="col-span-1 text-sm font-bold">${p.qty}x</div><div class="col-span-2 text-sm truncate">${p.designation}</div><div class="col-span-1 text-sm">${p.length}</div><div class="col-span-1 text-sm">${p.width}</div><div class="col-span-1 text-sm">${p.thickness}</div><div class="col-span-1 text-sm text-center">${hasEdge ? 'Sim' : 'Não'}</div><div class="col-span-1 text-sm text-center">${hasMachining ? 'Sim' : 'Não'}</div><div class="col-span-2 text-sm truncate">${p.material}</div><div class="col-span-2 flex justify-center gap-1"><button title="Duplicar" class="h-7 w-7 flex items-center justify-center bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition duplicate-btn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><button title="Editar" class="h-7 w-7 flex items-center justify-center bg-yellow-100 text-yellow-700 rounded-md hover:bg-yellow-200 transition edit-btn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></button><button title="Remover" class="h-7 w-7 flex items-center justify-center bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition remove-btn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>`;
                     item.querySelector('.remove-btn').onclick = () => removePiece(p.id); item.querySelector('.edit-btn').onclick = () => editPiece(p.id); item.querySelector('.duplicate-btn').onclick = () => duplicatePiece(p.id);
                     pieceListDiv.appendChild(item);
                 });
@@ -393,9 +389,12 @@
         clearListBtn.addEventListener('click', showConfirmClearModal);
         confirmClearBtn.addEventListener('click', () => { pieces = []; updatePieceListUI(); closeModal(confirmClearModal); });
         cancelClearBtn.addEventListener('click', () => closeModal(confirmClearModal));
+        rasgoInfoBtn.addEventListener('click', () => showModal(rasgoInfoModal));
+        closeRasgoInfoModalBtn.addEventListener('click', () => closeModal(rasgoInfoModal));
+        
         function getCleanFileName() { return `${(marceneiroNameInput.value || 'marceneiro').trim().replace(/\s+/g, '_')}_${(clienteNameInput.value || 'cliente').trim().replace(/\s+/g, '_')}`; }
-        async function saveProject() { if (!pieces.length) return showAlert('A lista está vazia.'); const data = { marceneiro: marceneiroNameInput.value, cliente: clienteNameInput.value, sheetWidth: sheetWidthInput.value, sheetHeight: sheetHeightInput.value, kerf: kerfInput.value, trim: trimInput.value, pieces }; const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `${getCleanFileName()}_projeto.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
-        function loadProject(e) { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => { try { const data = JSON.parse(ev.target.result); if (data && data.pieces) { marceneiroNameInput.value = data.marceneiro || ''; clienteNameInput.value = data.cliente || ''; sheetWidthInput.value = data.sheetWidth || 2750; sheetHeightInput.value = data.sheetHeight || 1840; kerfInput.value = data.kerf || 8; trimInput.value = data.trim || 20; pieces = data.pieces.map(p => ({ ...p, edgeBanding: p.edgeBanding || { l1: false, w1: false, l2: false, w2: false, material: '' } })); updatePieceListUI(); showAlert('Projeto carregado com sucesso!'); } else showAlert('Arquivo de projeto inválido.'); } catch { showAlert('Erro ao ler o arquivo do projeto.'); } }; r.readAsText(f); fileLoader.value = ''; }
+        async function saveProject() { if (!pieces.length) return showAlert('A lista está vazia.'); const data = { marceneiro: marceneiroNameInput.value, cliente: clienteNameInput.value, sheetWidth: sheetWidthInput.value, sheetHeight: sheetHeightInput.value, kerf: kerfInput.value, trim: trimInput.value, pieces, materials: await loadDataFromStorage('dncortes_materials'), edgeBandingMaterials: await loadDataFromStorage('dncortes_edgeBanding') }; const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `${getCleanFileName()}_projeto.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
+        function loadProject(e) { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = async ev => { try { const data = JSON.parse(ev.target.result); if (data && data.pieces) { marceneiroNameInput.value = data.marceneiro || ''; clienteNameInput.value = data.cliente || ''; sheetWidthInput.value = data.sheetWidth || 2750; sheetHeightInput.value = data.sheetHeight || 1840; kerfInput.value = data.kerf || 8; trimInput.value = data.trim || 20; pieces = data.pieces.map(p => ({ ...p, edgeBanding: p.edgeBanding || { l1: false, w1: false, l2: false, w2: false, material: '' }, machining: p.machining || { rebaixo: false, rasgo: false } })); if (data.materials) { await saveDataToStorage('dncortes_materials', data.materials); await loadMaterials(); } if (data.edgeBandingMaterials) { await saveDataToStorage('dncortes_edgeBanding', data.edgeBandingMaterials); await loadEdgeBanding(); } updatePieceListUI(); showAlert('Projeto carregado com sucesso!'); } else showAlert('Arquivo de projeto inválido.'); } catch { showAlert('Erro ao ler o arquivo do projeto.'); } }; r.readAsText(f); fileLoader.value = ''; }
         saveProjectBtn.addEventListener('click', saveProject);
         loadProjectBtn.addEventListener('click', () => fileLoader.click());
         fileLoader.addEventListener('change', loadProject);
@@ -403,19 +402,13 @@
         async function calculateAllPlans() {
             const license = await window.electronStore.get('dncortes_license');
             if (license !== 'full') {
-                let uses = await window.electronStore.get('dncortes_trial_uses') || 0;
-                if (uses >= 2) {
-                    showLogin('Você atingiu o limite de 2 planos de corte. Ative a licença para uso ilimitado.');
-                    return;
-                }
+                let uses = await window.electronStore.get('dncortes_trial_uses') || 0; uses = Number(uses);
+                if (uses >= 2) { showLogin('Você atingiu o limite de 2 planos de corte. Ative a licença para uso ilimitado.'); return; }
                 uses++;
                 await window.electronStore.set('dncortes_trial_uses', uses);
                 trialUsageDisplay.textContent = `Modo de Teste: ${2 - uses} usos restantes.`;
-                if (uses <= 2) {
-                    showAlert(`Este é o uso ${uses} de 2 do seu período de teste.`);
-                }
+                if (uses <= 2) showAlert(`Este é o uso ${uses} de 2 do seu período de teste.`);
             }
-
             if (!pieces.length) return showAlert('Adicione pelo menos uma peça.');
             const grouped = pieces.reduce((acc, p) => { (acc[`${p.material} (${p.thickness}mm)`] = acc[`${p.material} (${p.thickness}mm)`] || []).push(p); return acc; }, {});
             allMaterialPlans = [];
@@ -445,7 +438,6 @@
             }
             if (allMaterialPlans.length > 0) { populateMaterialSelector(); showOutputScreen(); displayPlans(); } else showAlert('Nenhuma peça pôde ser alocada.');
         }
-
         function packSheet(piecesToPack) {
             const usableWidth = parseInt(sheetWidthInput.value) - (2 * parseInt(trimInput.value)), usableHeight = parseInt(sheetHeightInput.value) - (2 * parseInt(trimInput.value)), kerfVal = parseInt(kerfInput.value), trimVal = parseInt(trimInput.value);
             let currentPieces = [...piecesToPack].sort((a, b) => (b.h * b.w) - (a.h * a.w));
@@ -477,7 +469,7 @@
         generatePlanBtn.addEventListener('click', calculateAllPlans);
         function populateMaterialSelector() { materialSelector.innerHTML = ''; allMaterialPlans.forEach((plan, idx) => { const o = document.createElement('option'); o.value = idx; o.textContent = plan.material; materialSelector.appendChild(o); }); materialSelector.selectedIndex = 0; }
         function displayPlans() { currentSheetIndex = 0; updatePlanView(); }
-        function updatePlanView() { if (!allMaterialPlans.length) return; const plan = allMaterialPlans[materialSelector.value || 0]; const sheet = plan.sheets[currentSheetIndex]; planTitle.textContent = `${plan.material} - Chapa ${currentSheetIndex + 1}/${plan.sheets.length}`; drawCuttingPlan(sheet.placedPieces); prevSheetBtn.disabled = currentSheetIndex === 0; nextSheetBtn.disabled = currentSheetIndex === plan.sheets.length - 1; }
+        function updatePlanView() { if (!allMaterialPlans.length || outputScreen.classList.contains('hidden')) return; const plan = allMaterialPlans[materialSelector.value || 0]; const sheet = plan.sheets[currentSheetIndex]; planTitle.textContent = `${plan.material} - Chapa ${currentSheetIndex + 1}/${plan.sheets.length}`; drawCuttingPlan(sheet.placedPieces); prevSheetBtn.disabled = currentSheetIndex === 0; nextSheetBtn.disabled = currentSheetIndex === plan.sheets.length - 1; }
         materialSelector.addEventListener('change', displayPlans);
         prevSheetBtn.addEventListener('click', () => { if (currentSheetIndex > 0) { currentSheetIndex--; updatePlanView(); } });
         nextSheetBtn.addEventListener('click', () => { const sheets = allMaterialPlans[materialSelector.value || 0].sheets; if (currentSheetIndex < sheets.length - 1) { currentSheetIndex++; updatePlanView(); } });
@@ -497,7 +489,7 @@
                 ctx.restore();
                 ctx.strokeStyle = '#1d4ed8'; ctx.lineWidth = 2; ctx.strokeRect(x, y, w, h);
                 if (p.edgeBanding) {
-                    ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 3;
+                    ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1.5 * scale;
                     if (p.edgeBanding.l1) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.stroke(); }
                     if (p.edgeBanding.l2) { ctx.beginPath(); ctx.moveTo(x, y + h); ctx.lineTo(x + w, y + h); ctx.stroke(); }
                     if (p.edgeBanding.w1) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + h); ctx.stroke(); }
@@ -511,20 +503,7 @@
             });
             utilizationP.textContent = `Aproveitamento: ${((totalArea / ( (sheetW - 2 * trimVal) * (sheetH - 2 * trimVal) )) * 100 || 0).toFixed(2)}%`;
         }
-        function calculateEdgeBanding() {
-            const summary = {};
-            pieces.forEach(p => {
-                const eb = p.edgeBanding;
-                if (eb && eb.material && (eb.l1 || eb.l2 || eb.w1 || eb.w2)) {
-                    if (!summary[eb.material]) summary[eb.material] = 0;
-                    let totalLengthForPiece = 0;
-                    if (eb.l1) totalLengthForPiece += p.length; if (eb.l2) totalLengthForPiece += p.length;
-                    if (eb.w1) totalLengthForPiece += p.width; if (eb.w2) totalLengthForPiece += p.width;
-                    summary[eb.material] += totalLengthForPiece * p.qty;
-                }
-            });
-            return Object.keys(summary).map(material => ({ material, totalM: (summary[material] / 1000).toFixed(2), rolls: Math.ceil(summary[material] / 1000 / 50) }));
-        }
+        function calculateEdgeBanding() { const summary = {}; pieces.forEach(p => { const eb = p.edgeBanding; if (eb && eb.material && (eb.l1 || eb.l2 || eb.w1 || eb.w2)) { if (!summary[eb.material]) summary[eb.material] = 0; let totalLengthForPiece = 0; if (eb.l1) totalLengthForPiece += p.length; if (eb.l2) totalLengthForPiece += p.length; if (eb.w1) totalLengthForPiece += p.width; if (eb.w2) totalLengthForPiece += p.width; summary[eb.material] += totalLengthForPiece * p.qty; } }); return Object.keys(summary).map(material => ({ material, totalM: (summary[material] / 1000).toFixed(2), rolls: Math.ceil(summary[material] / 1000 / 50) })); }
         async function handleDownloadPDF() {
             if (!allMaterialPlans.length) return showAlert("Gere um plano de corte antes de baixar o PDF.");
             downloadPdfBtn.disabled = true; downloadPdfBtn.textContent = 'Gerando...';
@@ -544,31 +523,118 @@
             allMaterialPlans.forEach(plan => { plan.sheets.forEach((sheet, sheetIndex) => { sheet.placedPieces.forEach(p => allPiecesForPDF.push([p.pieceIdCode, p.designation, p.originalW, p.originalH, `${plan.material.split('(')[0].trim()} - Chapa ${sheetIndex + 1}`])); }); });
             pdf.autoTable({ startY: lastY + 5, head: [['ID', 'Designação', 'Compr.', 'Larg.', 'Localização']], body: allPiecesForPDF, theme: 'grid', headStyles: { fillColor: [22, 163, 74] } });
 
-            allMaterialPlans.forEach(plan => {
-                plan.sheets.forEach((sheet, i) => {
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            for(const plan of allMaterialPlans) {
+                for(let i = 0; i < plan.sheets.length; i++) {
+                    const sheet = plan.sheets[i];
                     pdf.addPage();
                     pdf.setFontSize(16); pdf.text(`${plan.material} - Chapa ${i + 1}/${plan.sheets.length}`, 10, 15);
                     pdf.setFontSize(10); pdf.text(`Marceneiro: ${marceneiroNameInput.value} | Cliente: ${clienteNameInput.value}`, 10, 22);
-                    drawCuttingPlan(sheet.placedPieces);
-                    const imgData = canvas.toDataURL('image/png');
-                    const pdfWidth = pdf.internal.pageSize.getWidth(), pdfHeight = pdf.internal.pageSize.getHeight(), canvasAspectRatio = canvas.width / canvas.height;
-                    const tableWidth = 85, imageMargin = 10;
-                    const availableImgWidth = pdfWidth - tableWidth - imageMargin * 2;
-                    const availableImgHeight = pdfHeight - 25 - imageMargin;
-                    let imgWidth = availableImgWidth, imgHeight = imgWidth / canvasAspectRatio;
-                    if (imgHeight > availableImgHeight) { imgHeight = availableImgHeight; imgWidth = imgHeight * canvasAspectRatio; }
-                    pdf.addImage(imgData, 'PNG', tableWidth + imageMargin, 25, imgWidth, imgHeight);
+                    
                     const piecesOnSheet = sheet.placedPieces;
                     const bodyData = piecesOnSheet.map(p => [p.pieceIdCode, p.designation, p.originalW, p.originalH]);
-                    pdf.autoTable({ startY: 25, margin: { left: 10, right: pdfWidth - tableWidth - 10 }, head: [['ID', 'Designação', 'Compr.', 'Larg.']], body: bodyData, theme: 'grid', headStyles: { fillColor: [22, 163, 74] }, styles: { fontSize: 8 }, headStyles: { fontSize: 9 } });
-                });
-            });
+                    pdf.autoTable({ startY: 25, margin: { left: 10, right: pdf.internal.pageSize.getWidth() - 95 }, head: [['ID', 'Designação', 'Compr.', 'Larg.']], body: bodyData, theme: 'grid', headStyles: { fillColor: [22, 163, 74] }, styles: { fontSize: 8 }, headStyles: { fontSize: 9 } });
+
+                    // Desenho em alta resolução para o PDF
+                    const pdfScaleMultiplier = 2; // Resolução ajustada
+                    tempCanvas.width = parseInt(sheetWidthInput.value) * pdfScaleMultiplier;
+                    tempCanvas.height = parseInt(sheetHeightInput.value) * pdfScaleMultiplier;
+                    drawCuttingPlanForPDF(tempCtx, sheet.placedPieces, tempCanvas.width, tempCanvas.height, pdfScaleMultiplier);
+
+                    const imgData = tempCanvas.toDataURL('image/png');
+                    const pdfWidth = pdf.internal.pageSize.getWidth(), pdfHeight = pdf.internal.pageSize.getHeight();
+                    const imageStartX = 100, imageMargin = 10;
+                    const availableImgWidth = pdfWidth - imageStartX - imageMargin;
+                    const availableImgHeight = pdfHeight - 25 - imageMargin;
+                    let imgWidth = availableImgWidth, imgHeight = imgWidth / (tempCanvas.width / tempCanvas.height);
+                    if (imgHeight > availableImgHeight) { imgHeight = availableImgHeight; imgWidth = imgHeight * (tempCanvas.width / tempCanvas.height); }
+                    pdf.addImage(imgData, 'PNG', imageStartX, 25, imgWidth, imgHeight);
+                }
+            }
+
             pdf.save(`${getCleanFileName()}_plano_completo.pdf`);
             downloadPdfBtn.disabled = false; downloadPdfBtn.textContent = 'Baixar PDF do Plano';
             updatePlanView();
         }
+        function drawCuttingPlanForPDF(pdfCtx, planPieces, canvasW, canvasH, scaleMultiplier) {
+            const sheetW = parseInt(sheetWidthInput.value), sheetH = parseInt(sheetHeightInput.value), trimVal = parseInt(trimInput.value);
+            const scale = Math.min(canvasW / sheetW, canvasH / sheetH);
+            pdfCtx.clearRect(0, 0, canvasW, canvasH); pdfCtx.fillStyle = '#e5eefc'; pdfCtx.fillRect(0, 0, canvasW, canvasH);
+            pdfCtx.strokeStyle = '#2563eb'; pdfCtx.setLineDash([6 * scaleMultiplier, 6 * scaleMultiplier]); pdfCtx.lineWidth = 1 * scaleMultiplier;
+            pdfCtx.strokeRect(trimVal * scale, trimVal * scale, (sheetW - 2 * trimVal) * scale, (sheetH - 2 * trimVal) * scale); pdfCtx.setLineDash([]);
+            
+            planPieces.forEach(p => {
+                const x = p.x * scale, y = p.y * scale, w = p.w * scale, h = p.h * scale;
+                pdfCtx.fillStyle = 'rgba(255,255,255,.95)'; pdfCtx.fillRect(x, y, w, h);
+                pdfCtx.save(); pdfCtx.beginPath(); pdfCtx.rect(x, y, w, h); pdfCtx.clip();
+                pdfCtx.strokeStyle = 'rgba(100,116,139,.4)'; pdfCtx.lineWidth = 1.5 * scaleMultiplier; const step = 15 * scale;
+                if (!p.rotated) { for (let i = step; i < h; i += step) { pdfCtx.beginPath(); pdfCtx.moveTo(x, y + i); pdfCtx.lineTo(x + w, y + i); pdfCtx.stroke(); } } 
+                else { for (let i = step; i < w; i += step) { pdfCtx.beginPath(); pdfCtx.moveTo(x + i, y); pdfCtx.lineTo(x + i, y + h); pdfCtx.stroke(); } }
+                pdfCtx.restore();
+                
+                pdfCtx.strokeStyle = '#1d4ed8'; pdfCtx.lineWidth = 2 * scaleMultiplier; pdfCtx.strokeRect(x, y, w, h);
+                
+                if (p.edgeBanding) {
+                    pdfCtx.strokeStyle = '#ef4444'; pdfCtx.lineWidth = 2 * scaleMultiplier;
+                    if (p.edgeBanding.l1) { pdfCtx.beginPath(); pdfCtx.moveTo(x, y); pdfCtx.lineTo(x + w, y); pdfCtx.stroke(); }
+                    if (p.edgeBanding.l2) { pdfCtx.beginPath(); pdfCtx.moveTo(x, y + h); pdfCtx.lineTo(x + w, y + h); pdfCtx.stroke(); }
+                    if (p.edgeBanding.w1) { pdfCtx.beginPath(); pdfCtx.moveTo(x, y); pdfCtx.lineTo(x, y + h); pdfCtx.stroke(); }
+                    if (p.edgeBanding.w2) { pdfCtx.beginPath(); pdfCtx.moveTo(x + w, y); pdfCtx.lineTo(x + w, y + h); pdfCtx.stroke(); }
+                }
+                
+                const fs = Math.max(8 * scaleMultiplier, Math.min(w, h) * 0.1); pdfCtx.font = `600 ${fs}px Inter`; pdfCtx.fillStyle = '#1e293b'; pdfCtx.textAlign = 'center'; pdfCtx.textBaseline = 'middle';
+                const textLines = [`ID: ${p.pieceIdCode}`, `${p.designation}`, `${p.originalW}x${p.originalH}`], lineHeight = fs * 1.2;
+                if (h > textLines.length * lineHeight) { textLines.forEach((line, index) => pdfCtx.fillText(line, x + w/2, y + h/2 - (lineHeight * (textLines.length - 1))/2 + (index * lineHeight))); } 
+                else { pdfCtx.fillText(`${p.originalW}x${p.originalH}`, x + w/2, y + h/2); }
+            });
+        }
         downloadPdfBtn.addEventListener('click', handleDownloadPDF);
         downloadCsvBtn.addEventListener('click', () => { if (pieces.length === 0) return showAlert("A lista de peças está vazia."); const headers = "Designation,Quantity,Material,Length,Width,Thickness", rows = pieces.map(p => `"${p.designation}",${p.qty},"${p.material}",${p.length},${p.width},${p.thickness}`), csvContent = [headers, ...rows].join('\n'); const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `${getCleanFileName()}_lista_pecas.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link); });
+        
+        async function handlePrintLabels() {
+            if (allMaterialPlans.length === 0) return showAlert("Gere um plano de corte antes de gerar as etiquetas.");
+            printLabelsBtn.disabled = true; printLabelsBtn.textContent = 'Gerando...';
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({ orientation: 'l', unit: 'mm', format: [100, 50] });
+            let isFirstPage = true;
+            allMaterialPlans.forEach(plan => {
+                plan.sheets.forEach((sheet) => {
+                    sheet.placedPieces.forEach(p => {
+                        if (!isFirstPage) pdf.addPage();
+                        isFirstPage = false;
+                        const margin = 3;
+                        pdf.setFontSize(10); pdf.setFont(undefined, 'bold');
+                        pdf.text(`Cliente: ${clienteNameInput.value || 'N/A'}`, margin, 8);
+                        pdf.setFontSize(16); pdf.setFont(undefined, 'bold');
+                        pdf.text(`ID: ${p.pieceIdCode}`, margin, 18);
+                        pdf.setFontSize(12); pdf.setFont(undefined, 'normal');
+                        pdf.text(`${p.designation}`, margin, 26);
+                        pdf.setFontSize(14); pdf.setFont(undefined, 'bold');
+                        pdf.text(`${p.originalW} x ${p.originalH} mm`, margin, 34);
+                        let machiningText = '';
+                        if(p.machining) { if(p.machining.rebaixo) machiningText += 'R1 '; if(p.machining.rasgo) machiningText += 'R2'; }
+                        if(machiningText) { pdf.setFontSize(8); pdf.text(`Maq: ${machiningText}`, margin, 42); }
+                        const diagramX = 65, diagramY = 15, diagramW = 30, diagramH = 20;
+                        pdf.setDrawColor(180, 180, 180); pdf.rect(diagramX, diagramY, diagramW, diagramH);
+                        pdf.setFontSize(7); pdf.text("PEÇA", diagramX + diagramW/2, diagramY + diagramH/2, { align: 'center', baseline: 'middle'});
+                        if (p.edgeBanding) {
+                            pdf.setDrawColor(239, 68, 68); pdf.setLineWidth(1);
+                            if (p.edgeBanding.l1) pdf.line(diagramX, diagramY, diagramX + diagramW, diagramY);
+                            if (p.edgeBanding.l2) pdf.line(diagramX, diagramY + diagramH, diagramX + diagramW, diagramY + diagramH);
+                            if (p.edgeBanding.w1) pdf.line(diagramX, diagramY, diagramX, diagramY + diagramH);
+                            if (p.edgeBanding.w2) pdf.line(diagramX + diagramW, diagramY, diagramX + diagramW, diagramY + diagramH);
+                        }
+                    });
+                });
+            });
+            pdf.save(`${getCleanFileName()}_etiquetas.pdf`);
+            printLabelsBtn.disabled = false;
+            printLabelsBtn.textContent = 'Imprimir Etiquetas';
+        }
+
+        printLabelsBtn.addEventListener('click', handlePrintLabels);
         
         document.addEventListener('DOMContentLoaded', () => {
             loginScreen.style.display = 'none';
