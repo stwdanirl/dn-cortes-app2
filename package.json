@@ -1,6 +1,6 @@
 {
   "name": "niduscut",
-  "version": "2.2.2",
+  "version": "2.2.3",
   "description": "Software de plano de corte para marcenarias.",
   "main": "main.js",
   "scripts": {

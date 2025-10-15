@@ -4,10 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Plano Ideal - Otimizador de Cortes</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com">document.getElementById("updateButton").addEventListener("click", () => { window.electronStore.get("lastUpdateCheck").then(lastCheck => { if (!lastCheck || (Date.now() - lastCheck > 3600000)) { document.getElementById("updateButton").textContent = "Verificando..."; window.electron.ipcRenderer.send("check-update"); window.electronStore.set("lastUpdateCheck", Date.now()); } else { alert("Ja verificado recentemente. Tente novamente em 1 hora."); } }); }); </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">document.getElementById("updateButton").addEventListener("click", () => { window.electronStore.get("lastUpdateCheck").then(lastCheck => { if (!lastCheck || (Date.now() - lastCheck > 3600000)) { document.getElementById("updateButton").textContent = "Verificando..."; window.electron.ipcRenderer.send("check-update"); window.electronStore.set("lastUpdateCheck", Date.now()); } else { alert("Ja verificado recentemente. Tente novamente em 1 hora."); } }); }); </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js">document.getElementById("updateButton").addEventListener("click", () => { window.electronStore.get("lastUpdateCheck").then(lastCheck => { if (!lastCheck || (Date.now() - lastCheck > 3600000)) { document.getElementById("updateButton").textContent = "Verificando..."; window.electron.ipcRenderer.send("check-update"); window.electronStore.set("lastUpdateCheck", Date.now()); } else { alert("Ja verificado recentemente. Tente novamente em 1 hora."); } }); }); </script>
     <style>
         :root {
             --bg-main: #f0f2f5;
@@ -643,7 +643,7 @@
             loadEdgeBanding();
             checkLicense();
         });
-    </script>
-<div style="position: fixed; bottom: 5px; right: 5px; font-size: 10px; color: #888;">Update 1</div></body>
+    document.getElementById("updateButton").addEventListener("click", () => { window.electronStore.get("lastUpdateCheck").then(lastCheck => { if (!lastCheck || (Date.now() - lastCheck > 3600000)) { document.getElementById("updateButton").textContent = "Verificando..."; window.electron.ipcRenderer.send("check-update"); window.electronStore.set("lastUpdateCheck", Date.now()); } else { alert("Ja verificado recentemente. Tente novamente em 1 hora."); } }); }); </script>
+<div style="position: fixed; bottom: 5px; right: 5px; font-size: 10px; color: #888;">Update 1</div><div class="card"><button id="updateButton" class="app-button btn-primary">Verificar Atualizacao</button></div></body>
 </html>
 
