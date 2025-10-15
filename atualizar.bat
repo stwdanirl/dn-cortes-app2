@@ -1,20 +1,21 @@
 @echo off
-echo Atualizando o NidusCut para uma nova versão...
+echo Atualizando o NidusCut com novo numero de update...
 
-:: Define a nova versão (você pode mudar manualmente aqui)
-set NEW_VERSION=2.2.1
+:: Define a nova versão e numero de update
+set NEW_VERSION=2.2.2
+set UPDATE_NUMBER=1
 
 :: Atualiza o package.json
-powershell -Command "(Get-Content package.json) -replace '\"version\": \"2.2.0\"', '\"version\": \"%NEW_VERSION%\"' | Set-Content package.json"
+powershell -Command "(Get-Content package.json) -replace '\"version\": \"2.2.1\"', '\"version\": \"%NEW_VERSION%\"' | Set-Content package.json"
 echo Versao no package.json atualizada para %NEW_VERSION%.
 
-:: Atualiza o index.html (adiciona a versao no titulo)
-powershell -Command "(Get-Content index.html) -replace '<title>NidusCut - Otimizador de Cortes</title>', '<title>NidusCut v%NEW_VERSION% - Otimizador de Cortes</title>' | Set-Content index.html"
-echo Titulo no index.html atualizado para v%NEW_VERSION%.
+:: Adiciona o numero de update no index.html (em um canto discreto, inferior direito)
+powershell -Command "(Get-Content index.html) -replace '</body>', '<div style=\"position: fixed; bottom: 5px; right: 5px; font-size: 10px; color: #888;\">Update %UPDATE_NUMBER%</div></body>' | Set-Content index.html"
+echo Numero de update %UPDATE_NUMBER% adicionado no canto inferior direito.
 
 :: Adiciona, commita e push as mudancas
 git add .
-git commit -m "Atualizacao para v%NEW_VERSION% - nova versao"
+git commit -m "Atualizacao para v%NEW_VERSION% - Adicionado numero de update %UPDATE_NUMBER%"
 git push
 
 :: Cria e push a nova tag
